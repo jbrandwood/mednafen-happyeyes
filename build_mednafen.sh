@@ -165,6 +165,7 @@ PrepareSource()
   patch -p 1 -i ../patch/mednafen-1.21.3-justify-rest.patch
   patch -p 1 -i ../patch/mednafen-1.21.3-arrange-pcfx.patch
   patch -p 1 -i ../patch/mednafen-1.21.3-expand-debug.patch
+  patch -p 1 -i ../patch/mednafen-1.21.3-expand-watch.patch
 
   # msys2's tar doesn't create the "include/mednafen" directory as a symlink like
   # it should, so just copy all the patched source files over manually.
