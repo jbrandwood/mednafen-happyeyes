@@ -140,13 +140,13 @@ PrepareSource()
 
   cd mednafen
 
-  # Boost the PCE SysCard3 RAM from 192KB to 480KB (plus 2MB Arcade Card).
+  # Boost the PCE SysCard3 RAM from 192KB to 384KB (plus 2MB Arcade Card).
   #
-  # sed -r -i "s/0x68/0x44/g"             src/pce/huc.cpp
-  # sed -r -i "s/24 \* 8192/60 \* 8192/g" src/pce/huc.cpp
-  # sed -r -i "s/8192 \* 24/8192 \* 60/g" src/pce/huc.cpp
+  # sed -r -i "s/0x68/0x50/g"             src/pce/huc.cpp
+  # sed -r -i "s/24 \* 8192/48 \* 8192/g" src/pce/huc.cpp
+  # sed -r -i "s/8192 \* 24/8192 \* 48/g" src/pce/huc.cpp
 
-  patch -p 1 -i ../patch/mednafen-1.21.3-pce-480k-scd.patch
+  patch -p 1 -i ../patch/mednafen-1.21.3-pce-448k-scd.patch
 
   # Boost the PC-FX RAM from 2MB to 8MB.
   #
@@ -160,12 +160,16 @@ PrepareSource()
 
   # Apply the PCE & PC-FX debugger "improvements".
 
+  patch -p 1 -i ../patch/mednafen-1.21.3-tgfx-scd-fix.patch
+
   patch -p 1 -i ../patch/mednafen-1.21.3-new-6x9-font.patch
   patch -p 1 -i ../patch/mednafen-1.21.3-justify-main.patch
   patch -p 1 -i ../patch/mednafen-1.21.3-justify-rest.patch
   patch -p 1 -i ../patch/mednafen-1.21.3-arrange-pcfx.patch
   patch -p 1 -i ../patch/mednafen-1.21.3-expand-debug.patch
   patch -p 1 -i ../patch/mednafen-1.21.3-expand-watch.patch
+  patch -p 1 -i ../patch/mednafen-1.21.3-dump-to-file.patch
+  patch -p 1 -i ../patch/mednafen-1.21.3-disassembler.patch
 
   # msys2's tar doesn't create the "include/mednafen" directory as a symlink like
   # it should, so just copy all the patched source files over manually.

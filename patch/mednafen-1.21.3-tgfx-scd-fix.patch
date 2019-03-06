@@ -1,0 +1,19 @@
+diff -Naur mednafen-pure/src/pce/pcecd.cpp mednafen/src/pce/pcecd.cpp
+--- mednafen-pure/src/pce/pcecd.cpp	2018-04-29 11:29:07.000000000 -0700
++++ mednafen/src/pce/pcecd.cpp	2019-03-04 16:02:20.541380000 -0800
+@@ -527,12 +527,11 @@
+  {
+   switch (A & 0x18cf)
+   {
++   case 0x18c0: ret = 0x00; break;
+    case 0x18c1: ret = 0xaa; break;
+    case 0x18c2:	ret = 0x55; break;
+-   case 0x18c3: ret = 0x00; break;
+-   case 0x18c5:	ret = 0xaa; break;
+-   case 0x18c6: ret = 0x55; break;
+-   case 0x18c7:	ret = 0x03; break;
++   case 0x18c3: ret = 0x03; break;
++   default:     ret = 0xff; break;
+   }
+  }
+  else
