@@ -41,16 +41,16 @@
 #
 #
 # source files ...
-#   <some-windows-dir>\msys2\mednafen\mednafen-1.21.3.tar.xz
+#   <some-windows-dir>\msys2\mednafen\mednafen-1.22.1.tar.xz
 #   <some-windows-dir>\msys2\mednafen\zlib-1.2.11.tar.gz
 #
 # patch files to add extra RAM ...
 #   <some-windows-dir>\msys2\mednafen\mednafen-1.21.3-pce-480k-scd.patch
-#   <some-windows-dir>\msys2\mednafen\mednafen-1.21.3-pcfx-8mb-ram.patch
+#   <some-windows-dir>\msys2\mednafen\mednafen-1.22.1-pcfx-8mb-ram.patch
 #
 # patch files ...
 #   <some-windows-dir>\msys2\mednafen\mednafen-0.9.38.7.patch
-#   <some-windows-dir>\msys2\mednafen\zlib-1.2.8-msys2-off64.patch
+#   <some-windows-dir>\msys2\mednafen\zlib-1.2.11-msys2-off64.patch
 
 # Set OSNAME to "Linux", "Darwin", "FreeBSD" or something on Windows.
 OSNAME=`uname`
@@ -95,8 +95,8 @@ TestEXE "curl";
 mkdir -p archive
 cd archive
 
-if [ ! -e mednafen-1.21.3.tar.xz ]; then
-  curl -L -O -R http://mednafen.fobby.net/releases/files/mednafen-1.21.3.tar.xz
+if [ ! -e mednafen-1.22.1.tar.xz ]; then
+  curl -L -O -R http://mednafen.fobby.net/releases/files/mednafen-1.22.1.tar.xz
 fi
 
 # if [ ! -e zlib-1.2.11.tar.gz ]; then
@@ -136,7 +136,7 @@ PrepareSource()
     rm -rf mednafen
   fi
 
-  tar -xvJf archive/mednafen-1.21.3.tar.xz
+  tar -xvJf archive/mednafen-1.22.1.tar.xz
 
   cd mednafen
 
@@ -156,20 +156,22 @@ PrepareSource()
   # sed -r -i "s/, 21/, 23/g"       src/pcfx/pcfx.cpp
   # sed -r -i "s/2048 \*/8192 \*/g" src/pcfx/pcfx.cpp
 
-  patch -p 1 -i ../patch/mednafen-1.21.3-pcfx-8mb-ram.patch
+  patch -p 1 -i ../patch/mednafen-1.22.1-pcfx-8mb-ram.patch
 
   # Apply the PCE & PC-FX debugger "improvements".
 
   patch -p 1 -i ../patch/mednafen-1.21.3-tgfx-scd-fix.patch
 
   patch -p 1 -i ../patch/mednafen-1.21.3-new-6x9-font.patch
-  patch -p 1 -i ../patch/mednafen-1.21.3-justify-main.patch
-  patch -p 1 -i ../patch/mednafen-1.21.3-justify-rest.patch
+  patch -p 1 -i ../patch/mednafen-1.22.1-justify-main.patch
+  patch -p 1 -i ../patch/mednafen-1.22.1-justify-rest.patch
   patch -p 1 -i ../patch/mednafen-1.21.3-arrange-pcfx.patch
-  patch -p 1 -i ../patch/mednafen-1.21.3-expand-debug.patch
-  patch -p 1 -i ../patch/mednafen-1.21.3-expand-watch.patch
-  patch -p 1 -i ../patch/mednafen-1.21.3-dump-to-file.patch
-  patch -p 1 -i ../patch/mednafen-1.21.3-disassembler.patch
+  patch -p 1 -i ../patch/mednafen-1.22.1-expand-debug.patch
+  patch -p 1 -i ../patch/mednafen-1.22.1-expand-watch.patch
+  patch -p 1 -i ../patch/mednafen-1.22.1-expand-dblog.patch
+
+  patch -p 1 -i ../patch/mednafen-1.22.1-dump-to-file.patch
+  patch -p 1 -i ../patch/mednafen-1.22.1-disassembler.patch
 
   # msys2's tar doesn't create the "include/mednafen" directory as a symlink like
   # it should, so just copy all the patched source files over manually.
