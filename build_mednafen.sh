@@ -41,7 +41,7 @@
 #
 #
 # source files ...
-#   <some-windows-dir>\msys2\mednafen\mednafen-1.22.1.tar.xz
+#   <some-windows-dir>\msys2\mednafen\mednafen-1.22.2.tar.xz
 #   <some-windows-dir>\msys2\mednafen\zlib-1.2.11.tar.gz
 #
 # patch files to add extra RAM ...
@@ -95,8 +95,8 @@ TestEXE "curl";
 mkdir -p archive
 cd archive
 
-if [ ! -e mednafen-1.22.1.tar.xz ]; then
-  curl -L -O -R http://mednafen.fobby.net/releases/files/mednafen-1.22.1.tar.xz
+if [ ! -e mednafen-1.22.2.tar.xz ]; then
+  curl -L -O -R http://mednafen.fobby.net/releases/files/mednafen-1.22.2.tar.xz
 fi
 
 # if [ ! -e zlib-1.2.11.tar.gz ]; then
@@ -136,7 +136,7 @@ PrepareSource()
     rm -rf mednafen
   fi
 
-  tar -xvJf archive/mednafen-1.22.1.tar.xz
+  tar -xvJf archive/mednafen-1.22.2.tar.xz
 
   cd mednafen
 

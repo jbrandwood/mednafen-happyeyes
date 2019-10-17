@@ -2,7 +2,7 @@
 
 Patches and a build script to make Mednafen's debugger easier to read without eyestrain.
 
-This project supports Mednafen 1.22.1, and it has been tested on both Microsoft Windows and Debian linux.
+This project supports Mednafen 1.22.2, and it has been tested on both Microsoft Windows and Debian linux.
 
 The patches are released under the GPL license, in order to match Mednafen's own license.
 
