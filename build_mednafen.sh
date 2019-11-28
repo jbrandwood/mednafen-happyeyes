@@ -173,6 +173,8 @@ PrepareSource()
   patch -p 1 -i ../patch/mednafen-1.22.1-dump-to-file.patch
   patch -p 1 -i ../patch/mednafen-1.22.1-disassembler.patch
 
+  patch -p 1 -i ../patch/mednafen-1.22.1-ted2-1mb-ram.patch
+
   # msys2's tar doesn't create the "include/mednafen" directory as a symlink like
   # it should, so just copy all the patched source files over manually.
 
