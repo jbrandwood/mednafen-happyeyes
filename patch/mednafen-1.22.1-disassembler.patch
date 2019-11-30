@@ -16,9 +16,9 @@ diff -Naur mednafen-pure/src/pce/debug.cpp mednafen-fixed/src/pce/debug.cpp
  
  	a = tmpa;
  }
-diff -Naur mednafen-pure/src/pce/dis6280.cpp mednafen-fixed/src/pce/dis6280.cpp
+diff -Naur mednafen-pure/src/pce/dis6280.cpp mednafen/src/pce/dis6280.cpp
 --- mednafen-pure/src/pce/dis6280.cpp	2019-04-23 14:54:58.000000000 -0700
-+++ mednafen-fixed/src/pce/dis6280.cpp	2019-11-28 13:52:21.736273500 -0800
++++ mednafen/src/pce/dis6280.cpp	2019-11-29 16:55:31.073104100 -0800
 @@ -43,6 +43,7 @@
   return(0);
  }
@@ -27,7 +27,7 @@ diff -Naur mednafen-pure/src/pce/dis6280.cpp mednafen-fixed/src/pce/dis6280.cpp
  
  static const char *fstrings[20]=
  { 
-@@ -468,3 +469,499 @@
+@@ -468,3 +469,515 @@
     sprintf(stringo+strlen(stringo),".db $%02X                       ;%02X", buf, buf);
  
  }
@@ -278,20 +278,36 @@ diff -Naur mednafen-pure/src/pce/dis6280.cpp mednafen-fixed/src/pce/dis6280.cpp
 +
 + char * pString = stringo + sprintf(stringo,"$%02X:%04X\t\t", (unsigned) bank, (unsigned) addr);
 +
-+ unsigned uByte = Read(addr++);
-+ unsigned uInst = aHuC6280InstByOpcode[ uByte ];
-+ unsigned uMode = aHuC6280ModeByOpcode[ uByte ];
++ unsigned uByte = Read(addr);
++ unsigned uInst;
++ unsigned uMode;
 + uint8    aArgs[8];
 +
-+ for (unsigned i = 0; i != aHuC6280ModeBytes[ uMode ] ; ++i)
++ if (addr >= 0xFFF6)
 + {
-+  if (addr == SpecialA || addr == 0x0000 || addr >= 0xFFF6)
++  /* Interrupt Vectors */
++  uInst = INST_xxx;
++  uMode = MODE_xxx;
++  ++addr;
++
++  if ((addr != SpecialA) && (addr & 1)) ++addr;
++ }
++ else
++ {
++  uInst = aHuC6280InstByOpcode[ uByte ];
++  uMode = aHuC6280ModeByOpcode[ uByte ];
++  ++addr;
++
++  for (unsigned i = 0; i != aHuC6280ModeBytes[ uMode ] ; ++i)
 +  {
-+   uInst = INST_xxx;
-+   uMode = MODE_xxx;
-+   break;
++   if (addr == SpecialA || addr >= 0xFFF6)
++   {
++    uInst = INST_xxx;
++    uMode = MODE_xxx;
++    break;
++   }
++   aArgs[i] = Read(addr++);
 +  }
-+  aArgs[i] = Read(addr++);
 + }
 +
 + const char * pInstName = aHuC6280InstNames + (uInst << 2);
