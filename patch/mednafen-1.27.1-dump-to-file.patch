@@ -1,0 +1,203 @@
+diff -Naur mednafen-pure/src/drivers/debugger.cpp mednafen/src/drivers/debugger.cpp
+--- mednafen-pure/src/drivers/debugger.cpp	2021-09-22 13:51:03.277427000 -0400
++++ mednafen/src/drivers/debugger.cpp	2021-09-22 13:52:24.908515600 -0400
+@@ -505,7 +505,8 @@
+  AuxWriteBPS,
+  OpBPS,
+  ForceInt,
+- TraceLogPrompt
++ TraceLogPrompt,
++ DisDump
+ } PromptType;
+ 
+ // FIXME, cleanup, less spaghetti:
+@@ -689,6 +690,53 @@
+                     WatchAddrPhys &= ~0xF;
+                    }
+                   }
++                  else if(InPrompt == DisDump)
++                  {
++                   uint32 A1, A2, tmpsize;
++                   char fname[256];
++                   bool acceptable = false;
++
++                   if(trio_sscanf(pstring.c_str(), "%08x %08x %255[^\r\n]", &A1, &A2, fname) == 3)
++                    acceptable = true;
++                   else if(trio_sscanf(pstring.c_str(), "%08x +%08x %255[^\r\n]", &A1, &tmpsize, fname) == 3)
++                   {
++                    acceptable = true;
++                    A2 = A1 + tmpsize - 1;
++                   }
++
++                   A1 &= ((1ULL << CurGame->Debugger->LogAddrBits) - 1);
++                   A1 &= ~(CurGame->Debugger->InstructionAlignment - 1);
++                   A2 &= ((1ULL << CurGame->Debugger->LogAddrBits) - 1);
++                   A2 &= ~(CurGame->Debugger->InstructionAlignment - 1);
++
++                   if (A2 < A1)
++                    acceptable = false;
++
++                   if(!acceptable)
++                    MDFND_OutputNotice(MDFN_NOTICE_ERROR, "Invalid disassembly specification.");
++                   else
++                   {           
++                    FileStream fp(fname, FileStream::MODE_WRITE);
++                    char loc_text[64];
++                    char dis_text[256];
++                    char eol_text[16];
++
++                    trio_snprintf(eol_text, sizeof(eol_text), "\n");
++
++                    while(A1 <= A2)
++                    {
++                     uint32 lastA = A1;
++                     CurGame->Debugger->Disassemble(A1, -1U, dis_text); // A1 is passed by reference to Disassemble()
++                     if (strchr(dis_text,'\t') == NULL)
++                     {
++                      trio_snprintf(loc_text, sizeof(loc_text), " %0*X: ", (CurGame->Debugger->LogAddrBits + 3) / 4, lastA);
++                      fp.write(loc_text, strlen(loc_text));
++                     }
++                     fp.write(dis_text, strlen(dis_text));
++                     fp.write(eol_text, strlen(eol_text));
++                    }
++                   }
++                  }
+                   free(tmp_c_str);
+                   InPrompt = None;
+ 
+@@ -880,8 +928,14 @@
+   //printf("%08x %08x\n", A, DisAddr);
+   CurGame->Debugger->Disassemble(A, ResyncAddr, dis_text_buf); // A is passed by reference to Disassemble()
+ 
++  char * dis_text_excl_addr = strchr(dis_text_buf,'\t');
++  if (dis_text_excl_addr == NULL)
++   dis_text_excl_addr = dis_text_buf;
++  else
++   while (*++dis_text_excl_addr == '\t');
++
+   NewEntry.A = lastA;
+-  NewEntry.text = std::string(dis_text_buf);
++  NewEntry.text = std::string(dis_text_excl_addr);
+   NewEntry.COffs = 0xFFFFFFFF;
+ 
+   const uint64 a_m_la  = (A - lastA) & ((1ULL << CurGame->Debugger->LogAddrBits) - 1);
+@@ -964,7 +1018,7 @@
+    uint32 color = pf_cache.MakeColor(0xFF, 0xFF, 0xFF, 0xFF);
+    uint32 addr_color = pf_cache.MakeColor(0xA0, 0xA0, 0xFF, 0xFF);
+ 
+-   trio_snprintf(addr_text, sizeof(addr_text), " %0*X%s", (CurGame->Debugger->LogAddrBits + 3) / 4, dis_A, (DisBuffer[dbi].ForcedResync ? "!!" : ": "));
++   trio_snprintf(addr_text, sizeof(addr_text), " %0*X%s", (CurGame->Debugger->LogAddrBits + 3) / 4, dis_A, (DisBuffer[dbi].ForcedResync ? "!! " : ":  "));
+ 
+    if(dis_A == DisAddr && DisBuffer[dbi].COffs == DisCOffs)
+    {
+@@ -1839,6 +1893,15 @@
+ 		  PromptTAKC = event->key.keysym.sym;
+ 		 }
+ 	         break;
++
++	 case SDLK_d:
++	 	if(!InPrompt)
++		{
++		 InPrompt = DisDump;
++		 myprompt = new DebuggerPrompt("Disassemble (start end filename)", "");
++		 PromptTAKC = event->key.keysym.sym;
++		}
++		break;
+          }
+          break;
+   }
+diff -Naur mednafen-pure/src/drivers/memdebugger.cpp mednafen/src/drivers/memdebugger.cpp
+--- mednafen-pure/src/drivers/memdebugger.cpp	2021-09-22 13:51:03.252426600 -0400
++++ mednafen/src/drivers/memdebugger.cpp	2021-09-22 13:52:24.919516200 -0400
+@@ -301,6 +301,55 @@
+ 	   }
+           }
+          }
++         else if(which == DumpHex)
++         {
++          uint32 A1, A2, tmpsize;
++          char fname[256];
++          bool acceptable = false;
++
++          if(trio_sscanf(pstring.c_str(), "%08x %08x %255[^\r\n]", &A1, &A2, fname) == 3)
++           acceptable = true;
++          else if(trio_sscanf(pstring.c_str(), "%08x +%08x %255[^\r\n]", &A1, &tmpsize, fname) == 3)
++          {
++           acceptable = true;
++           A2 = A1 + tmpsize - 1;
++          }
++
++          if (A2 < A1)
++           acceptable = false;
++
++          if(!acceptable)
++           throw MDFN_Error(0, _("Invalid hex dump specification."));
++          else
++          {           
++           FileStream fp(fname, FileStream::MODE_WRITE);
++           uint8 byte_buffer[16];
++           char line_buffer[256];
++
++           const uint64 zemod = SizeCache[CurASpace];
++
++           while(A1 <= A2)
++           {
++            char *line_pointer = line_buffer;
++            size_t to_write;
++            to_write = A2 - A1 + 1;
++            if(to_write > 8) to_write = 8;
++
++            ASpace->GetAddressSpaceBytes(ASpace->name.c_str(), A1, to_write, byte_buffer);
++
++            line_pointer += trio_snprintf(line_pointer, line_buffer + sizeof(line_buffer) - line_pointer, " %0*X:  .db ", (std::max<int>(12, 63 - MDFN_lzcount64(round_up_pow2(zemod))) + 3) / 4, A1);
++
++            for (size_t i = 0; i != to_write; ++i)
++            {
++             line_pointer += trio_snprintf(line_pointer, line_buffer + sizeof(line_buffer) - line_pointer, " $%02X,", byte_buffer[i]);
++            }
++            line_pointer += trio_snprintf(line_pointer, line_buffer + sizeof(line_buffer) - line_pointer, "\n");
++
++            fp.write(line_buffer, strlen(line_buffer));
++            A1 += to_write;
++           }
++          }
++         }
+ 	 else if(which == TextSearch)
+ 	 {
+           TS_String = pstring;
+@@ -871,16 +920,22 @@
+ 
+ 	 case SDLK_d:
+                 InPrompt = DumpMem;
+-                myprompt = new MemDebuggerPrompt(this, "Dump Memory(start end filename)", "");
++                myprompt = new MemDebuggerPrompt(this, "Dump Memory (start end filename)", "");
+ 		PromptTAKC = event->key.keysym.sym;
+ 		break;
+ 
+ 	 case SDLK_l:
+                 InPrompt = LoadMem;
+-                myprompt = new MemDebuggerPrompt(this, "Load Memory(start end filename)", "");
++                myprompt = new MemDebuggerPrompt(this, "Load Memory (start end filename)", "");
+ 		PromptTAKC = event->key.keysym.sym;
+                 break;
+ 
++	 case SDLK_h:
++                InPrompt = DumpHex;
++                myprompt = new MemDebuggerPrompt(this, "Hex Dump (start end filename)", "");
++		PromptTAKC = event->key.keysym.sym;
++		break;
++
+ 	 case SDLK_s:
+ 	        if(SizeCache[CurASpace] > (1 << 24))
+                 {
+diff -Naur mednafen-pure/src/drivers/memdebugger.h mednafen/src/drivers/memdebugger.h
+--- mednafen-pure/src/drivers/memdebugger.h	2021-06-12 12:12:32.000000000 -0400
++++ mednafen/src/drivers/memdebugger.h	2021-09-22 13:52:24.930516900 -0400
+@@ -81,6 +81,7 @@
+   TextSearch,
+   DumpMem,
+   LoadMem,
++  DumpHex,
+   SetCharset,
+  } PromptType;
+ 

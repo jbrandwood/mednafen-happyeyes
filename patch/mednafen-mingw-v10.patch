@@ -1,0 +1,27 @@
+diff -Naur mednafen-pure/src/drivers/main.cpp mednafen/src/drivers/main.cpp
+--- mednafen-pure/src/drivers/main.cpp	2021-06-12 12:12:32.000000000 -0400
++++ mednafen/src/drivers/main.cpp	2021-09-22 13:04:11.161277000 -0400
+@@ -1998,7 +1998,7 @@
+ extern "C"
+ {
+  void __set_app_type(int);
+- extern int mingw_app_type;
++ extern int __mingw_app_type;
+ }
+ 
+ __attribute__((force_align_arg_pointer))	// Not sure what's going on to cause this to be needed.
+@@ -2019,12 +2019,12 @@
+ 	 if(SuppressErrorPopups)
+ 	 {
+ 	  __set_app_type(1);
+-	  mingw_app_type = 0;
++	  __mingw_app_type = 0;
+ 	 }
+ 	 else
+ 	 {
+ 	  __set_app_type(2);
+-	  mingw_app_type = 1;
++	  __mingw_app_type = 1;
+ 	 }
+ #endif
+ 	}

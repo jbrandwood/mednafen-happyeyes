@@ -1,0 +1,39 @@
+diff -Naur mednafen-pure/src/pce/huc.cpp mednafen/src/pce/huc.cpp
+--- mednafen-pure/src/pce/huc.cpp	2021-09-22 14:03:22.692403000 -0400
++++ mednafen/src/pce/huc.cpp	2021-09-22 14:05:39.538188300 -0400
+@@ -211,6 +211,7 @@
+  const uint32 sf2_threshold = 2048 * 1024;
+  bool sf2_mapper = false;
+  bool mcg_mapper = false;
++ bool ted_mapper = false;
+  bool UseBRAM = false;
+ 
+  try
+@@ -234,10 +235,16 @@
+    if(!memcmp(buf + 0x1FD0, "MCGENJIN", 8))
+     mcg_mapper = true;
+ 
++   if(!memcmp(buf + 0x1FD0, "TED2CARD", 8))
++   {
++    ted_mapper = true;
++    m_len = 128 * 8192;
++   }
++
+    s->seek(-8192, SEEK_CUR);	// Seek backwards so we don't undo skip copier header.
+   }
+ 
+-  if(!syscard && m_len >= sf2_threshold && !mcg_mapper)
++  if(!syscard && m_len >= sf2_threshold && !mcg_mapper && !ted_mapper)
+   {
+    sf2_mapper = true;
+ 
+@@ -368,6 +375,9 @@
+ 
+     HuCPU.SetFastRead(x, ROMMap[x] + x * 8192);
+     HuCPU.SetReadHandler(x, HuCRead);
++
++    if (ted_mapper)
++      HuCPU.SetWriteHandler(x, HuCRAMWrite);
+    }
+   }
+ 

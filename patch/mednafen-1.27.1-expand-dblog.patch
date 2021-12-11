@@ -1,0 +1,69 @@
+diff -Naur mednafen-pure/src/drivers/debugger.cpp mednafen/src/drivers/debugger.cpp
+--- mednafen-pure/src/drivers/debugger.cpp	2021-09-22 13:45:29.138421400 -0400
++++ mednafen/src/drivers/debugger.cpp	2021-09-22 13:47:38.669542400 -0400
+@@ -789,8 +789,8 @@
+ 	  break;
+ 
+   /* Debugger Log */
+-  case 3: rect->w = 512;
+-	  rect->h = 448;
++  case 3: rect->w = 800;
++	  rect->h = 600;
+ 	  break;
+  }
+ 
+diff -Naur mednafen-pure/src/drivers/logdebugger.cpp mednafen/src/drivers/logdebugger.cpp
+--- mednafen-pure/src/drivers/logdebugger.cpp	2021-06-12 12:12:32.000000000 -0400
++++ mednafen/src/drivers/logdebugger.cpp	2021-09-22 13:47:38.682042600 -0400
+@@ -29,6 +29,8 @@
+ #include <trio/trio.h>
+ #include <map>
+ 
++#define LOG_NUMLINES	43
++
+ typedef struct
+ {
+  char *type;
+@@ -78,7 +80,7 @@
+  NeoDeathLog["All"].entries.push_back(nle);
+  NeoDeathLog[std::string(type)].entries.push_back(nle);
+ 
+- if((WhichLog->entries.size() - WhichLog->LogScroll) == 33)
++ if((WhichLog->entries.size() - WhichLog->LogScroll) == (LOG_NUMLINES+1))
+   WhichLog->LogScroll++;
+ }
+ 
+@@ -143,7 +145,7 @@
+ 
+  y += 13;
+ 
+- for(uint32 i = WhichLog->LogScroll; i < (WhichLog->LogScroll + 32) && i < WhichLog->entries.size(); i++)
++ for(uint32 i = WhichLog->LogScroll; i < (WhichLog->LogScroll + LOG_NUMLINES) && i < WhichLog->entries.size(); i++)
+  {
+   int32 type_x = 0;
+   char tmpbuf[64];
+@@ -162,9 +164,9 @@
+ {
+  int64 NewScroll = (int64)WhichLog->LogScroll + delta;
+ 
+- if(NewScroll > ((int64)WhichLog->entries.size() - 32))
++ if(NewScroll > ((int64)WhichLog->entries.size() - LOG_NUMLINES))
+  {
+-  NewScroll = (int64)WhichLog->entries.size() - 32;
++  NewScroll = (int64)WhichLog->entries.size() - LOG_NUMLINES;
+  }
+ 
+  if(NewScroll < 0) 
+@@ -241,10 +243,10 @@
+ 	 case SDLK_DOWN: ChangePos(1); 
+ 			 break;
+ 
+-	 case SDLK_PAGEUP: ChangePos(-32); 
++	 case SDLK_PAGEUP: ChangePos(-LOG_NUMLINES); 
+ 			   break;
+ 
+-	 case SDLK_PAGEDOWN: ChangePos(32); 
++	 case SDLK_PAGEDOWN: ChangePos(LOG_NUMLINES); 
+ 			     break;
+ 
+ 	 case SDLK_t:LoggingActive = !LoggingActive;

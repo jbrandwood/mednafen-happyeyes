@@ -2,7 +2,7 @@
 
 Patches and a build script to make Mednafen's debugger easier to read without eyestrain.
 
-This project supports Mednafen 1.22.2, and it has been tested on both Microsoft Windows and Debian linux.
+This project supports Mednafen 1.27.1, and it has been tested on both Microsoft Windows and Debian linux.
 
 The patches are released under the GPL license, in order to match Mednafen's own license.
 
@@ -54,6 +54,18 @@ If you want to change this, you can edit the build script.
 
 
 ## Building on Windows (with MSYS2)
+
+This has changed from earlier versions of the mednafen-happyeyes project, and
+builds for Windows are now cross-compiled on Linux, in the same way that the
+official Mednafen project releases are built.
+
+See this thread on the Mednafen forum for more details ...
+https://forum.fobby.net/index.php?t=msg&&th=2004&goto=6452#msg_6452
+
+Note: This change has been made because recent MSYS2 builds of Mednafen have
+      produced executables that crash on startup.
+
+***
 
 Install the base MSYS2 system, either 32-bit or 64-bit, from [here](https://www.msys2.org/).
 

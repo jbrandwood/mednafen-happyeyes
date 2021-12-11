@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# Build Mednafen from source on Windows 7 (with 32-bit or 64-bit msys2) or Linux (debian tested)
+# Cross-Compile Mednafen from source on Linux for 64-bit Windows
 #
 #
 # This used to be complicated by Mednafen wanting zlib to be built with full
@@ -98,10 +98,6 @@ cd archive
 if [ ! -e mednafen-1.27.1.tar.xz ]; then
   curl -L -O -R http://mednafen.fobby.net/releases/files/mednafen-1.27.1.tar.xz
 fi
-
-# if [ ! -e zlib-1.2.11.tar.gz ]; then
-#   curl -L -O -R http://zlib.net/zlib-1.2.11.tar.gz
-# fi
 
 cd ..
 
@@ -201,9 +197,11 @@ fi
 # Setup the toolchain for linux
 #---------------------------------------------------------------------------------
 
-# OUTPUTDIR=$(cygpath $(cygpath -m /)../)mednafen
-#
-# echo OUTPUTDIR is $OUTPUTDIR
+export CROSS_BASE="$HOME/mednafen-cross"
+export CROSS32_PATH="$CROSS_BASE/win32"
+export CROSS64_PATH="$CROSS_BASE/win64"
+
+export PATH="$CROSS64_PATH/bin:$PATH"
 
 #---------------------------------------------------------------------------------
 # Configure Mednafen
@@ -215,6 +213,7 @@ fi
 export SOURCEDIR=../../mednafen
 
 export OUTPUTDIR=$TOPDIR/../../bin/mednafen
+export OUTPUTDIR=$TOPDIR/win64
 
 mkdir -p $OUTPUTDIR
 export PATH=$OUTPUTDIR:$PATH
@@ -232,26 +231,16 @@ cd $MDFNBUILD
 #	CPPFLAGS 32-bit: -O2 -fomit-frame-pointer -march=i686 -mtune=pentium3
 #	CPPFLAGS 64-bit: -O2 -fomit-frame-pointer -mtune=amdfam10
 
-# These defines were needed when we had to compile our own version of zlib.
-#
-# export CPPFLAGS=-D_LARGEFILE64_SOURCE=1\ -D_LFS64_LARGEFILE=1
+PKG_CONFIG_PATH="$CROSS64_PATH/lib/pkgconfig"
+export CPPFLAGS="-I$CROSS64_PATH/include -DUNICODE=1 -D_UNICODE=1"
+export LDFLAGS="-L$CROSS64_PATH/lib -static-libstdc++"
 
-# export CPPFLAGS=-DUNICODE=1\ -D_UNICODE=1
-# export LDFLAGS=-static-libstdc++
-
-if [ "$OSTYPE" = "msys" ] ; then
-  EXTRACONFIG=--disable-alsa\ --disable-jack\ --enable-threads=win32
-else
-  EXTRACONFIG=
-fi
-
-#  --disable-nls
-#  --disable-rpath
+export CROSSCONFIG=--host=x86_64-w64-mingw32\ --disable-alsa\ --disable-jack\ --enable-threads=win32\ --with-sdl-prefix="$CROSS64_PATH"
 
 $SOURCEDIR/configure     \
   --prefix=$OUTPUTDIR    \
   --bindir=$OUTPUTDIR    \
-  $EXTRACONFIG           \
+  $CROSSCONFIG           \
   --disable-apple2       \
   --disable-gb           \
   --disable-gba          \
@@ -271,52 +260,9 @@ $SOURCEDIR/configure     \
   --enable-vb            \
   --enable-wswan
 
-export CPPFLAGS=
+# export CPPFLAGS=
 
 echo "Mednafen configuration completed."
-
-#---------------------------------------------------------------------------------
-# Build zlib and install it into the mednafen build tree
-#---------------------------------------------------------------------------------
-# 
-# ZLIB_PKG=zlib-1.2.11
-# 
-# if [ -e  $BUILDTEMP/$ZLIB_PKG ]; then
-#   rm -rf $BUILDTEMP/$ZLIB_PKG
-# fi
-# 
-# cd $BUILDTEMP
-# 
-# tar -xvzf ../$ZLIB_PKG.tar.gz
-# 
-# cd $ZLIB_PKG
-# 
-# patch -p1 < ../../zlib-1.2.11-msys2-off64.patch
-# 
-# ./configure               \
-#   --prefix=$MDFNBUILD     \
-#   --libdir=$MDFNBUILD/src \
-#   --shared
-# 
-# make 2>&1 | tee zlib_make.log
-# 
-# if [ $? != 0 ]; then
-#   echo "Error: building zlib";
-#   exit 1;
-# fi
-# 
-# make install 2>&1 | tee zlib_install.log
-# 
-# if [ $? != 0 ]; then
-#   echo "Error: installing zlib into the mednafen build directory";
-#   exit 1;
-# fi
-# 
-# # Change the mednafen makefile to use the local library.
-# 
-# # sed -r -i "s/ -lz / libz.a /g" $MDFNBUILD/src/Makefile
-# 
-# echo "Mednafen zlib library built."
 
 #---------------------------------------------------------------------------------
 # Build Mednafen
@@ -324,7 +270,7 @@ echo "Mednafen configuration completed."
 
 cd $MDFNBUILD
 
-make --jobs=4 $MAKE_FLAGS 2>&1 | tee mednafen_make.log
+make --jobs=$(nproc) V=0 $MAKE_FLAGS 2>&1 | tee mednafen_make.log
 
 if [ $? != 0 ]; then
   echo "Error: building mednafen";
@@ -342,36 +288,20 @@ fi
 # Copy the support DLL files (only on Windows)
 #---------------------------------------------------------------------------------
 
-if [ "$OSTYPE" = "msys" ] ; then
+# Copy the mingw_w64 DLLs to the destination directory.
 
-  # Shrink the executable.
+DLL1DIR="$CROSS64_PATH/bin"
+DLL2DIR="$CROSS64_PATH/x86_64-w64-mingw32/lib"
 
-  strip $OUTPUTDIR/mednafen.exe
+cp -p $DLL1DIR/libcharset-1.dll   $OUTPUTDIR/
+cp -p $DLL1DIR/libiconv-2.dll     $OUTPUTDIR/
+cp -p $DLL1DIR/SDL2.dll           $OUTPUTDIR/
+cp -p $DLL1DIR/sdl2-config        $OUTPUTDIR/
+cp -p $DLL2DIR/libgcc_s_seh-1.dll $OUTPUTDIR/
 
-  # Copy the msys2 DLLs to the destination directory.
+# Shrink the executable.
 
-  if [ "$HOSTTYPE" = "i686" ] ; then
-    DLLDIR=/mingw32/bin
-    cp -p $DLLDIR/libgcc_s_dw2-1.dll  $OUTPUTDIR/
-  else
-    DLLDIR=/mingw64/bin
-    cp -p $DLLDIR/libgcc_s_seh-1.dll  $OUTPUTDIR/
-  fi
-
-  cp -p $DLLDIR/libFLAC-8.dll       $OUTPUTDIR/
-  cp -p $DLLDIR/libiconv-2.dll      $OUTPUTDIR/
-  cp -p $DLLDIR/libogg-0.dll        $OUTPUTDIR/
-  cp -p $DLLDIR/libsndfile-1.dll    $OUTPUTDIR/
-  cp -p $DLLDIR/libspeex-1.dll      $OUTPUTDIR/
-  cp -p $DLLDIR/libstdc++-6.dll     $OUTPUTDIR/
-  cp -p $DLLDIR/libvorbis-0.dll     $OUTPUTDIR/
-  cp -p $DLLDIR/libvorbisenc-2.dll  $OUTPUTDIR/
-  cp -p $DLLDIR/libwinpthread-1.dll $OUTPUTDIR/
-  cp -p $DLLDIR/sdl2-config         $OUTPUTDIR/
-  cp -p $DLLDIR/SDL2.dll            $OUTPUTDIR/
-  cp -p $DLLDIR/zlib1.dll           $OUTPUTDIR/
-
-fi
+strip $OUTPUTDIR/mednafen.exe
 
 cd ../../
 
