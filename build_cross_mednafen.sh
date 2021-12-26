@@ -171,6 +171,8 @@ PrepareSource()
   patch -p 1 -i ../patch/mednafen-1.27.1-dump-to-file.patch
   patch -p 1 -i ../patch/mednafen-1.27.1-disassembler.patch
 
+  patch -p 1 -i ../patch/mednafen-1.27.1-visualise-sat.patch
+
   patch -p 1 -i ../patch/mednafen-1.27.1-ted2-1mb-ram.patch
 
 # patch -p 1 -i ../patch/mednafen-mingw-v10.patch
