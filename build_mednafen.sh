@@ -113,8 +113,8 @@ if [ "$OSTYPE" = "msys" ] ; then
   pacman -S --noconfirm --needed mingw-w64-$HOSTTYPE-libsndfile mingw-w64-$HOSTTYPE-SDL2
 else
   echo To successfully build on any linux or any other *nix variant, you need
-  echo to make sure echo that some prerequisite development libraries/packages
-  echo are installed.
+  echo to make sure that some prerequisite development libraries/packages are
+  echo installed.
   echo On debian, those packages are ...
   echo       build-essential
   echo       pkg-config
