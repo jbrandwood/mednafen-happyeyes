@@ -216,7 +216,11 @@ fi
 
 export SOURCEDIR=../../mednafen
 
+if [ "$OSTYPE" = "msys" ] ; then
 export OUTPUTDIR=$TOPDIR/../../bin/mednafen
+else
+export OUTPUTDIR=$TOPDIR/bin
+fi
 
 mkdir -p $OUTPUTDIR
 export PATH=$OUTPUTDIR:$PATH
@@ -326,7 +330,7 @@ echo "Mednafen configuration completed."
 
 cd $MDFNBUILD
 
-make --jobs=4 $MAKE_FLAGS 2>&1 | tee mednafen_make.log
+make --jobs=$(nproc) $MAKE_FLAGS 2>&1 | tee mednafen_make.log
 
 if [ $? != 0 ]; then
   echo "Error: building mednafen";
